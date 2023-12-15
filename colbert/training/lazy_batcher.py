@@ -5,11 +5,9 @@ from functools import partial
 from colbert.utils.utils import print_message
 from colbert.modeling.tokenization import QueryTokenizer, DocTokenizer, tensorize_triples
 
-from colbert.utils.runs import Run
-
 
 class LazyBatcher():
-    def __init__(self, args, rank=0, nranks=1):
+    def __init__(self, args):
         self.bsize, self.accumsteps = args.bsize, args.accumsteps
 
         self.query_tokenizer = QueryTokenizer(args.query_maxlen)
@@ -17,11 +15,11 @@ class LazyBatcher():
         self.tensorize_triples = partial(tensorize_triples, self.query_tokenizer, self.doc_tokenizer)
         self.position = 0
 
-        self.triples = self._load_triples(args.triples, rank, nranks)
+        self.triples = self._load_triples(args.triples)
         self.queries = self._load_queries(args.queries)
         self.collection = self._load_collection(args.collection)
 
-    def _load_triples(self, path, rank, nranks):
+    def _load_triples(self, path):
         """
         NOTE: For distributed sampling, this isn't equivalent to perfectly uniform sampling.
         In particular, each subset is perfectly represented in every batch! However, since we never
@@ -34,9 +32,8 @@ class LazyBatcher():
 
         with open(path) as f:
             for line_idx, line in enumerate(f):
-                if line_idx % nranks == rank:
-                    qid, pos, neg = ujson.loads(line)
-                    triples.append((qid, pos, neg))
+                qid, pos, neg = ujson.loads(line)
+                triples.append((qid, pos, neg))
 
         return triples
 
@@ -99,5 +96,5 @@ class LazyBatcher():
         return self.tensorize_triples(queries, positives, negatives, self.bsize // self.accumsteps)
 
     def skip_to_batch(self, batch_idx, intended_batch_size):
-        Run.warn(f'Skipping to batch #{batch_idx} (with intended_batch_size = {intended_batch_size}) for training.')
+        # Run.warn(f'Skipping to batch #{batch_idx} (with intended_batch_size = {intended_batch_size}) for training.')
         self.position = intended_batch_size * batch_idx

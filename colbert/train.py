@@ -3,10 +3,7 @@ import random
 import torch
 import copy
 
-import colbert.utils.distributed as distributed
-
 from colbert.utils.parser import Arguments
-from colbert.utils.runs import Run
 from colbert.training.training import train
 
 
@@ -26,8 +23,7 @@ def main():
 
     args.lazy = args.collection is not None
 
-    with Run.context(consider_failed_if_interrupted=False):
-        train(args)
+    train(args)
 
 
 if __name__ == "__main__":

@@ -5,12 +5,9 @@ from functools import partial
 from colbert.utils.utils import print_message
 from colbert.modeling.tokenization import QueryTokenizer, DocTokenizer, tensorize_triples
 
-from colbert.utils.runs import Run
-
 
 class EagerBatcher():
-    def __init__(self, args, rank=0, nranks=1):
-        self.rank, self.nranks = rank, nranks
+    def __init__(self, args):
         self.bsize, self.accumsteps = args.bsize, args.accumsteps
 
         self.query_tokenizer = QueryTokenizer(args.query_maxlen)
@@ -30,12 +27,9 @@ class EagerBatcher():
     def __next__(self):
         queries, positives, negatives = [], [], []
 
-        for line_idx, line in zip(range(self.bsize * self.nranks), self.reader):
-            if (self.position + line_idx) % self.nranks != self.rank:
-                continue
+        for line_idx, line in zip(range(self.bsize), self.reader):
 
             query, pos, neg = line.strip().split('\t')
-
             queries.append(query)
             positives.append(pos)
             negatives.append(neg)
@@ -55,7 +49,7 @@ class EagerBatcher():
     def skip_to_batch(self, batch_idx, intended_batch_size):
         self._reset_triples()
 
-        Run.warn(f'Skipping to batch #{batch_idx} (with intended_batch_size = {intended_batch_size}) for training.')
+        # Run.warn(f'Skipping to batch #{batch_idx} (with intended_batch_size = {intended_batch_size}) for training.')
 
         _ = [self.reader.readline() for _ in range(batch_idx * intended_batch_size)]
 

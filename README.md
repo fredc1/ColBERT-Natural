@@ -1,3 +1,38 @@
+# ColBERT on Natural Questions
+This branch has been forked from the [ColBERT](https://github.com/stanford-futuredata/ColBERT/tree/main) repo for extension and experiments on new datasets.
+
+## Setup
+
+Install [gsutil](https://cloud.google.com/storage/docs/gsutil_install#linux):
+```bash
+curl -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-457.0.0-linux-x86_64.tar.gz
+```
+```bash
+tar -xf google-cloud-cli-457.0.0-linux-x86_64.tar.gz
+```
+```bash
+./google-cloud-sdk/install.sh
+```
+
+Download the [data](https://ai.google.com/research/NaturalQuestions/download):
+```bash
+gsutil cp gs://natural_questions/v1.0-simplified/simplified-nq-train.jsonl.gz . && gunzip simplified-nq-train.jsonl.gz
+```
+```bash
+gsutil cp gs://natural_questions/v1.0-simplified/nq-dev-all.jsonl.gz . && gunzip nq-dev-all.jsonl.gz
+```
+
+## Environment
+
+```bash
+conda env create -f conda_env.yml
+```
+```bash
+conda activate colbert-v0.2
+```
+
+
+
 ----
 ----
 

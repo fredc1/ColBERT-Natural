@@ -3,12 +3,13 @@ import torch
 
 from colbert.utils.utils import print_message, save_checkpoint
 from colbert.parameters import SAVED_CHECKPOINTS
+from colbert.evaluation.mrr import NQ_Validator
 
-
-def print_progress(scores):
+def print_progress(scores, running_loss, batch, model, args_amp, args_bsize):
+    validator = NQ_Validator(model, "/workspace/ColBERT-Natural/data/nq-dev-all.jsonl", args_amp, args_bsize)
     positive_avg, negative_avg = round(scores[:, 0].mean().item(), 2), round(scores[:, 1].mean().item(), 2)
-    print("#>>>   ", positive_avg, negative_avg, '\t\t|\t\t', positive_avg - negative_avg)
-
+    print(f"Batch: {batch} AvgScore(+): {positive_avg} AvgScore(-): {negative_avg} Delta: {positive_avg - negative_avg} Running Avg Loss: {running_loss}, Validation MRR: {}")
+    assert 0
 '''
 def manage_checkpoints(args, colbert, optimizer, batch_idx):
     arguments = args.input_arguments.__dict__

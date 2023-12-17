@@ -4,7 +4,7 @@ import time
 import torch
 import torch.nn as nn
 import numpy as np
-
+from tqdm import tqdm
 from transformers import AdamW
 from colbert.utils.amp import MixedPrecisionManager
 
@@ -17,10 +17,11 @@ from colbert.utils.utils import print_message
 from colbert.training.utils import print_progress #, manage_checkpoints
 
 
+
 def train(args):
-    random.seed(12345)
-    np.random.seed(12345)
-    torch.manual_seed(12345)
+    random.seed(42)
+    np.random.seed(42)
+    torch.manual_seed(42)
     
     if args.lazy:
         reader = LazyBatcher(args)
@@ -57,7 +58,7 @@ def train(args):
     labels = torch.zeros(args.bsize, dtype=torch.long, device=DEVICE)
 
     start_time = time.time()
-    train_loss = 0.0
+    running_train_loss = 0.0
 
     start_batch_idx = 0
 
@@ -67,28 +68,30 @@ def train(args):
 
         reader.skip_to_batch(start_batch_idx, checkpoint['arguments']['bsize'])
 
-    for batch_idx, BatchSteps in zip(range(start_batch_idx, args.maxsteps), reader):
+    for batch_idx, BatchSteps in tqdm(zip(range(start_batch_idx, args.maxsteps), reader)):
         this_batch_loss = 0.0
-
+        last_scores = None
         for queries, passages in BatchSteps:
             with amp.context():
                 scores = colbert(queries, passages).view(2, -1).permute(1, 0)
                 loss = criterion(scores, labels[:scores.size(0)])
                 loss = loss / args.accumsteps
-
-            print_progress(scores)
+                last_scores = scores
 
             amp.backward(loss)
 
-            train_loss += loss.item()
+            running_train_loss += loss.item()
             this_batch_loss += loss.item()
 
         amp.step(colbert, optimizer)
 
-        avg_loss = train_loss / (batch_idx+1)
-
         num_examples_seen = (batch_idx - start_batch_idx) * args.bsize
         elapsed = float(time.time() - start_time)
 
-        print_message(batch_idx, avg_loss)
+        if batch_idx % 50 == 0 or batch_idx == 1:
+            print_progress(last_scores, running_train_loss, batch_idx, colbert, args.amp, args.bsize)
+            running_train_loss = 0.0
+            # print(f"Avg loss so far: {avg_loss}  Batch# {batch_idx + 1}")
+        # print_message(batch_idx, avg_loss)
         # manage_checkpoints(args, colbert, optimizer, batch_idx+1)
+    

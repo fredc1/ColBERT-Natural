@@ -88,8 +88,8 @@ def train(args):
         num_examples_seen = (batch_idx - start_batch_idx) * args.bsize
         elapsed = float(time.time() - start_time)
 
-        if batch_idx % 50 == 0 or batch_idx == 1:
-            print_progress(last_scores, running_train_loss, batch_idx, colbert, args.amp, args.bsize)
+        if batch_idx % 50 == 0:
+            print_progress(last_scores, running_train_loss/50, batch_idx, colbert, args.bsize)
             running_train_loss = 0.0
             # print(f"Avg loss so far: {avg_loss}  Batch# {batch_idx + 1}")
         # print_message(batch_idx, avg_loss)
